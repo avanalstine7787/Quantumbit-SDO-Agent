@@ -148,15 +148,24 @@ viewer/runtime entries are included when present (not as a ceiling).
 | ObligationManager | Obligation Manager |
 | ObligationUser | Obligation User |
 
-### Agentforce / Einstein (discover by pattern)
+### Agentforce / Einstein (explicit allowlist)
 
-Also assign any permission set whose Name or Label matches (case-insensitive):
+Assign only these permission set **Names** when present (do **not** LIKE-scan
+`%Einstein%` / `%Agentforce%` — SDOs contain hundreds and admin-for-everyone
+becomes multi-hour):
 
-- `Agentforce`
-- `Einstein`
-- `GenAI`
-- `PromptTemplate`
-- `Manage AI Agents` (user permission may live on a perm set)
+- `AgentforceDefaultAdmin`
+- `AgentforceDefaultAgentUser`
+- `AgentforceServiceAgentUser`
+- `EinsteinGPTPromptTemplateManager`
+- `EinsteinGPTPromptTemplateUser`
+- `PromptTemplateManager`
+- `PromptTemplateUser`
+- `ManageAIAgents`
+- `AgentPlatformBuilder`
+
+Plus matching PSLs from the PSL table above (`Agentforce (Default)`, Platform
+Developer/Admin, Einstein Agent, Einstein Prompt Templates).
 
 ## Users to include / exclude
 
