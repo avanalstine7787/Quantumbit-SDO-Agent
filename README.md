@@ -28,7 +28,10 @@ setup mutations.
 4. Follows Salesforce Help [Set Up Agentforce for Revenue Management](https://help.salesforce.com/s/articleView?id=ind.rev_agent_setup.htm&type=5)
 5. **Always** deploys QuantumBit (`prepare_rlm_org` SDO profile); asks whether to
    include the QuantumBit **product set** (`qb` / `constraints_data`)
-6. Asks whether to run [RLM Generic Demo Products](.cursor/skills/rlm-generic-demo-products/SKILL.md)
+6. Asks whether to run [RLM Generic Demo Products](.cursor/skills/rlm-generic-demo-products/SKILL.md);
+   on Yes, always syncs that skill from
+   [upstream](https://github.com/aaronlong78/8-9-26-CBS-SEs-demo-product-builder-skill)
+   (commit/push if the local copy changed) before running
 7. **Always** refreshes decision tables and rebuilds the PCM search index
 
 ## Skill locations
@@ -47,6 +50,6 @@ setup mutations.
 ## Notes
 
 - `vendor/rlm-base-dev/` is gitignored; the skill clones it during Step 5.
-- Upstream generic-products source:
+- Upstream generic-products source (synced on every Step 6 Yes):
   https://github.com/aaronlong78/8-9-26-CBS-SEs-demo-product-builder-skill
 - Irreversible org toggles always require explicit confirmation.

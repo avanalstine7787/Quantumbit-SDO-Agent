@@ -9,29 +9,65 @@ Upstream skill source:
 
 - https://github.com/aaronlong78/8-9-26-CBS-SEs-demo-product-builder-skill
 - Local path (project skill): `.cursor/skills/rlm-generic-demo-products/`
-- Optional upstream mirror for updates: `vendor/cbs-demo-product-builder-skill/`
-  (gitignored; re-clone and copy into `.cursor/skills/` when refreshing)
+- Upstream mirror: `vendor/cbs-demo-product-builder-skill/` (gitignored)
 
-## Clone / update
+## Required preflight — always sync before run
 
-The project ships a copy under `.cursor/skills/rlm-generic-demo-products/`.
-To refresh from upstream:
+**Before reading or running** `.cursor/skills/rlm-generic-demo-products/SKILL.md`,
+**always** sync from upstream. Do not ask for approval. Skip this entire section
+only when the user answered **No** to Step 6.
+
+### 1. Clone or pull vendor mirror
 
 ```bash
 mkdir -p vendor
 if [ -d vendor/cbs-demo-product-builder-skill/.git ]; then
+  git -C vendor/cbs-demo-product-builder-skill fetch origin
+  git -C vendor/cbs-demo-product-builder-skill checkout main
   git -C vendor/cbs-demo-product-builder-skill pull --ff-only origin main
 else
-  git clone --depth 1 \
+  git clone --branch main \
     https://github.com/aaronlong78/8-9-26-CBS-SEs-demo-product-builder-skill.git \
     vendor/cbs-demo-product-builder-skill
 fi
+```
+
+### 2. Overwrite local skill copy
+
+```bash
 rm -rf .cursor/skills/rlm-generic-demo-products
 cp -R vendor/cbs-demo-product-builder-skill/rlm-generic-demo-products \
   .cursor/skills/rlm-generic-demo-products
 ```
 
-**SOURCE OF TRUTH:** Always read and follow
+### 3. Compare and commit/push if changed
+
+```bash
+git status --short -- .cursor/skills/rlm-generic-demo-products/
+```
+
+- **No output** → Report that the local skill is already current; continue to Step 6 run.
+- **Any changes** → Automatically commit and push (do not ask):
+
+```bash
+git add -- .cursor/skills/rlm-generic-demo-products/
+git commit -m "$(cat <<'EOF'
+Sync rlm-generic-demo-products from upstream.
+
+Refresh the vendored skill from aaronlong78/8-9-26-CBS-SEs-demo-product-builder-skill before running Step 6.
+EOF
+)"
+git push origin HEAD
+git push sfemu HEAD
+```
+
+Push to **both** remotes `origin` and `sfemu` when they exist. If a remote is
+missing, skip it. If one push fails, report the error and **continue** with the
+skill run (do not abort setup).
+
+Stage **only** paths under `.cursor/skills/rlm-generic-demo-products/`.
+
+**SOURCE OF TRUTH after sync:** Always read and follow
 `.cursor/skills/rlm-generic-demo-products/SKILL.md` (the project-local copy).
 Do not use a global/personal install of this skill.
 
@@ -41,13 +77,13 @@ Do not use a global/personal install of this skill.
 2. Step 5 — **always** QuantumBit (`prepare_rlm_org`; product set Yes/No via `qb` /
    `constraints_data`)
 3. Ask: launch RLM Generic Demo Products?
-   - **Yes** → Step 6 below
+   - **Yes** → required preflight (sync) → Step 6 below
    - **No** → skip to Step 7
 4. Step 7 — **always** refresh decision tables + rebuild PCM search index
 
 ## Step 6 — Run generic demo products (only if user said Yes)
 
-1. Ensure the project skill copy exists (commands above).
+1. Complete **Required preflight** above (sync + commit/push if needed).
 2. **Read** `.cursor/skills/rlm-generic-demo-products/SKILL.md` and execute it.
 3. **Org handoff:** Use the org already confirmed in revenue-cloud-sdo-setup Step 1.
    When Phase 4 asks for org, pre-select that username/alias — do not re-auth from scratch.

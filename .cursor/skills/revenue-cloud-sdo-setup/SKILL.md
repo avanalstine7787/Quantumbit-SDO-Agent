@@ -31,9 +31,9 @@ deploy `AiAuthoringBundle` / `.agent` files.
    load the QuantumBit demo product dataset. **No** →
    `-o qb false -o constraints_data false`. **Yes** → repository defaults.
 4. **Optional generic demo products** — After QuantumBit finishes, ask whether to
-   launch `rlm-generic-demo-products`. **Yes** →
-   [references/generic-demo-products.md](references/generic-demo-products.md).
-   **No** → skip Step 6.
+   launch `rlm-generic-demo-products`. **Yes** → always sync from upstream per
+   [references/generic-demo-products.md](references/generic-demo-products.md)
+   (overwrite local skill; commit/push if changed), then run. **No** → skip Step 6.
 5. **Always refresh index** — After QuantumBit (and Step 6 if run), always run
    `refresh_all_decision_tables` then `rebuild_search_index`.
 
@@ -179,12 +179,18 @@ After QuantumBit finishes, ask exactly:
 > Do you want to launch the RLM Generic Demo Products skill for a custom company catalog?
 
 - **Yes** → Follow [references/generic-demo-products.md](references/generic-demo-products.md):
-  1. Ensure project skill `.cursor/skills/rlm-generic-demo-products/` is present
-     (refresh from upstream if needed).
-  2. **Read** `.cursor/skills/rlm-generic-demo-products/SKILL.md` and run it
+  1. **Always sync first** from
+     https://github.com/aaronlong78/8-9-26-CBS-SEs-demo-product-builder-skill
+     (clone/pull `vendor/cbs-demo-product-builder-skill`, overwrite
+     `.cursor/skills/rlm-generic-demo-products/`). No approval ask.
+  2. If `git status` shows changes under that skill path, **automatically**
+     commit those files and push to remotes `origin` and `sfemu` (skip missing
+     remotes; on push failure report and continue). If unchanged, report already
+     current.
+  3. **Read** `.cursor/skills/rlm-generic-demo-products/SKILL.md` and run it
      end-to-end against the **already-confirmed** target org (Phase 0 still asks
      for company name + website).
-  3. **Phase 4b brand image:** run only if the org is **not** already rebranded
+  4. **Phase 4b brand image:** run only if the org is **not** already rebranded
      for that company; skip if it already is.
 - **No** → Skip Step 6; continue to **Step 7**.
 
@@ -211,7 +217,7 @@ Run even if both product asks were No.
 | Quotes on Opportunity layouts | `scripts/add_quotes_related_list_to_opportunity_layouts.py` |
 | Strip QB branding | `scripts/strip_quantumbit_branding.py` |
 | QuantumBit | Shell + CumulusCI in `vendor/rlm-base-dev` |
-| Generic demo products | `.cursor/skills/rlm-generic-demo-products/SKILL.md` (optional ask) |
+| Generic demo products | Sync upstream then `.cursor/skills/rlm-generic-demo-products/SKILL.md` (optional ask) |
 | Decision tables + PCM index | `cci flow run refresh_all_decision_tables`, `cci task run rebuild_search_index` |
 
 Always use `--json` on `sf` commands. Do not invent Help steps when the article is available.
@@ -227,5 +233,5 @@ When finished, report:
 - Agentforce Revenue setup status
 - QuantumBit: always deployed; product set Yes/No (`qb` / `constraints_data`);
   recoveries if any
-- Generic demo products: skipped / ran (company, products, Phase 4b)
+- Generic demo products: skipped / ran (upstream sync status, company, products, Phase 4b)
 - Decision tables refreshed + PCM search index rebuild status

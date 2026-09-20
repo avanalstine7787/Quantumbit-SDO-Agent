@@ -107,7 +107,10 @@ Smoke-check (adjust to what the org licenses):
     - Yes → defaults (`qb` / `constraints_data` on)
     - No → `-o qb false -o constraints_data false`
 17. **RLM Generic Demo Products (optional)** — After QuantumBit, ask whether to
-    launch the skill. If Yes, follow [generic-demo-products.md](generic-demo-products.md).
+    launch the skill. If Yes, **always sync** from
+    https://github.com/aaronlong78/8-9-26-CBS-SEs-demo-product-builder-skill
+    (overwrite local skill; auto commit/push to `origin` + `sfemu` if changed),
+    then follow [generic-demo-products.md](generic-demo-products.md).
     Phase 4b brand image only if the org is not already rebranded for that company.
 18. **Refresh decision tables + rebuild PCM search index (always)**
     ```bash
