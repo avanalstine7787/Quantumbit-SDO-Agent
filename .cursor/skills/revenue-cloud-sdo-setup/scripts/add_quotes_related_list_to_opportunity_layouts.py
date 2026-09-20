@@ -40,11 +40,12 @@ def parse_sf_json(raw: str) -> dict:
     return data
 
 
-def run_sf(args: list[str], *, check: bool = True) -> dict:
+def run_sf(args: list[str], *, check: bool = True, cwd: Path | None = None) -> dict:
     proc = subprocess.run(
         ["sf", *args],
         capture_output=True,
         text=True,
+        cwd=str(cwd) if cwd else None,
     )
     raw = (proc.stdout or "") + (proc.stderr or "")
     data = parse_sf_json(raw)
@@ -69,6 +70,8 @@ def quotes_enabled(target_org: str) -> bool:
             + "\n"
         )
         (tmp_path / "force-app" / "main" / "default").mkdir(parents=True)
+        # Run retrieve with cwd=tmp so output stays inside this mini-project
+        # (parent workspace may also be an sf project).
         run_sf(
             [
                 "project",
@@ -78,10 +81,9 @@ def quotes_enabled(target_org: str) -> bool:
                 "Settings:Quote",
                 "--target-org",
                 target_org,
-                "--output-dir",
-                str(tmp_path / "force-app" / "main" / "default"),
                 "--json",
-            ]
+            ],
+            cwd=tmp_path,
         )
         hits = list(tmp_path.rglob("Quote.settings-meta.xml"))
         if not hits:
@@ -204,10 +206,9 @@ def main() -> int:
                     *meta_args,
                     "--target-org",
                     target,
-                    "--output-dir",
-                    str(project / "force-app" / "main" / "default"),
                     "--json",
-                ]
+                ],
+                cwd=project,
             )
 
         layout_files = sorted(layouts_dir.glob("Opportunity-*.layout-meta.xml"))
@@ -260,7 +261,7 @@ def main() -> int:
                 "deploy",
                 "start",
                 "--source-dir",
-                str(deploy_layouts),
+                "force-app/main/default/layouts",
                 "--target-org",
                 target,
                 "--wait",
@@ -268,6 +269,7 @@ def main() -> int:
                 "--json",
             ],
             check=False,
+            cwd=deploy_root,
         )
         status = result.get("status")
         res = result.get("result") or {}
