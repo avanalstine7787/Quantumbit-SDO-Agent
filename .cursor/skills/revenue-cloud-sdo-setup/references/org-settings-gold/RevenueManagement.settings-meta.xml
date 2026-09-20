@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<RevenueManagementSettings xmlns="http://soap.sforce.com/2006/04/metadata">
+    <enableAdvCreateOrdersFromQuote>true</enableAdvCreateOrdersFromQuote>
+    <enableAdvancedDetailLinePricing>false</enableAdvancedDetailLinePricing>
+    <enableAsIsRenewals>true</enableAsIsRenewals>
+    <enableAutoAddDerivedAsset>true</enableAutoAddDerivedAsset>
+    <enableConfigurePriceScale>false</enableConfigurePriceScale>
+    <!-- enableContextReuse: present on EFM2; omit from default gold deploy if
+         target rejects the field (common on some API/org builds). Prefer
+         enabling via UI/Help when Metadata deploy fails with that field name. -->
+    <enableCoreCPQ>true</enableCoreCPQ>
+    <enableDeltaPricing>true</enableDeltaPricing>
+    <enableFullEscalationHydration>false</enableFullEscalationHydration>
+    <enableGroupRampMultiSchedulePref>true</enableGroupRampMultiSchedulePref>
+    <enableGroupRampPref>true</enableGroupRampPref>
+    <enableGroupRampTrialSegmentPref>true</enableGroupRampTrialSegmentPref>
+    <enableRampDeal>true</enableRampDeal>
+    <enableRevInstPricingDefaultPref>true</enableRevInstPricingDefaultPref>
+    <enableRevUnifiedSetup>true</enableRevUnifiedSetup>
+    <enableRevenueAdjustment>true</enableRevenueAdjustment>
+    <enableScaleAttributes>false</enableScaleAttributes>
+    <enableTransactionCloning>true</enableTransactionCloning>
+    <enableTransactionProcessor>true</enableTransactionProcessor>
+    <groupsEnabled>true</groupsEnabled>
+    <hidePriceRefreshNtfcn>false</hidePriceRefreshNtfcn>
+    <persistChunkSizeOverride>true</persistChunkSizeOverride>
+    <relaxUniqueCipValidation>true</relaxUniqueCipValidation>
+    <skipOrgSttPricing>false</skipOrgSttPricing>
+</RevenueManagementSettings>

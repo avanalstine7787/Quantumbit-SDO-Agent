@@ -1,0 +1,29 @@
+# Local Salesforce CLI auth / cache
+.sf/
+.sfdx/
+*.log
+
+# Python
+__pycache__/
+*.pyc
+.Python
+.venv/
+venv/
+
+# OS / editor
+.DS_Store
+*.swp
+.idea/
+
+# Large / regenerable local clones and scratch
+vendor/rlm-base-dev/
+vendor/cbs-demo-product-builder-skill/
+tmp/
+force-app/main/default/settings/*.settings-meta.xml
+
+# Secrets / env
+.env
+.env.*
+!.env.example
+*.pem
+sfdxAuthUrl*

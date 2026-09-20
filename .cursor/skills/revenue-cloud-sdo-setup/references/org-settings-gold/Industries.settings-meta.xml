@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<IndustriesSettings xmlns="http://soap.sforce.com/2006/04/metadata">
+    <!-- Timeline via Metadata (TSO / rlm-base-dev pre path). Prefer over Robot enable_timeline. -->
+    <enableAccountScoreEnabled>false</enableAccountScoreEnabled>
+    <enableContractMgmtPref>true</enableContractMgmtPref>
+    <enableDataTrueUpPreference>true</enableDataTrueUpPreference>
+    <enableDiscoveryFrameworkMetadata>true</enableDiscoveryFrameworkMetadata>
+    <enableDontSharePartyprofWPortalOrgPref>false</enableDontSharePartyprofWPortalOrgPref>
+    <enableEnhancedQuestionCreation>true</enableEnhancedQuestionCreation>
+    <enableEpcDeleteAccess>false</enableEpcDeleteAccess>
+    <enableIndustriesAssessment>true</enableIndustriesAssessment>
+    <enableIndustriesAssessmentPrefill>false</enableIndustriesAssessmentPrefill>
+    <enableIndustriesIntegrationOrchestratorPref>false</enableIndustriesIntegrationOrchestratorPref>
+    <enableMicrosoftWordAddInEnabled>true</enableMicrosoftWordAddInEnabled>
+    <enableNewTimelineSetupFlow>true</enableNewTimelineSetupFlow>
+    <enablePCMConfigRules>false</enablePCMConfigRules>
+    <enablePartyProfileParentSharingOrgPref>false</enablePartyProfileParentSharingOrgPref>
+    <enablePartyprofParentMultiSharingOrgPref>false</enablePartyprofParentMultiSharingOrgPref>
+    <enableTimelinePref>true</enableTimelinePref>
+    <partyProfMultiShrPrtnrsOrgPref>false</partyProfMultiShrPrtnrsOrgPref>
+    <rlaEditIfAccHasEdit>false</rlaEditIfAccHasEdit>
+</IndustriesSettings>
