@@ -1,25 +1,29 @@
 # QuantumBit Deploy (rlm-base-dev)
 
-Optional step after initial Revenue Cloud / Agentforce Revenue Management setup.
-
-Ask exactly:
-
-> Do you want to deploy the QuantumBit repo from https://github.com/bgaldino/rlm-base-dev ?
-
-Proceed only on an explicit Yes.
+**Always run** after initial Revenue Cloud / Agentforce Revenue Management setup
+(Steps 1–4). Do **not** ask whether to deploy the QuantumBit repo — only ask
+whether to load the **QuantumBit product set** (see below).
 
 ## Locked policy — SDO deploy profile
 
-Keep **repository feature defaults** (`billing`, `billing_ui`, `ux`, `qb`, `tax`,
-`dro`, `constraints`, etc.). Do **not** trim those with `-o … false`.
-
-This skill **does** apply SDO hardening before / around CCI:
-
-1. Strip QuantumBit Lightning **org branding** from the local vendor tree.
-2. Ensure **Timeline** via Metadata (`Industries` / `enableTimelinePref`) so
-   `billing_ui` flexipages can deploy without relying on Robot UI.
-3. **Automatic recovery** on known flakes (payments community, `enable_timeline`
+1. Always clone/connect `vendor/rlm-base-dev` and run `prepare_rlm_org`.
+2. Strip QuantumBit Lightning **org branding** from the local vendor tree.
+3. Ensure **Timeline** via Metadata (`Industries` / `enableTimelinePref`).
+4. **Automatic recovery** on known flakes (payments community, `enable_timeline`
    Robot) — do not abort the whole run.
+5. Keep `billing`, `billing_ui`, `ux`, `tax`, `dro`, `constraints` (engine), etc.
+   at repository defaults. Do **not** add `-o billing_ui false` or `-o ux false`.
+
+**Product set (optional ask from SKILL.md Step 5):**
+
+| User answer | CCI command |
+|-------------|-------------|
+| Yes — deploy QuantumBit product set | `cci flow run prepare_rlm_org --org <cci-alias>` |
+| No — skip product / constraint sample data | `cci flow run prepare_rlm_org --org <cci-alias> -o qb false -o constraints_data false` |
+
+`-o qb false` skips the QuantumBit demo product/pricing dataset and related data
+loads gated on `qb`. `-o constraints_data false` skips Constraint Builder sample
+product/rule data. QuantumBit **apps/metadata** (`quantumbit: true`) still deploy.
 
 Do **not** permanently edit upstream `vendor/rlm-base-dev/cumulusci.yml`.
 
@@ -120,15 +124,18 @@ Or deploy only `Settings:Industries` from
 [org-settings-gold/Industries.settings-meta.xml](org-settings-gold/Industries.settings-meta.xml)
 if gold was already applied earlier in the same session.
 
-### 6. Full prepare_rlm_org (keep feature defaults)
+### 6. prepare_rlm_org (product set from user ask)
+
+Ask the product-set question in SKILL.md Step 5, then run one of:
 
 ```bash
 cd vendor/rlm-base-dev
+# Product set Yes:
 cci flow run prepare_rlm_org --org <cci-alias>
-```
 
-Keep `billing_ui`, `ux`, `qb`, `billing`, etc. at repository defaults. Do **not**
-add `-o billing_ui false` or `-o ux false`.
+# Product set No:
+cci flow run prepare_rlm_org --org <cci-alias> -o qb false -o constraints_data false
+```
 
 ### 7. Long-running builds and automatic recovery
 
@@ -182,11 +189,11 @@ Never pass `--org` to:
 ## Success criteria
 
 - Flow completes (with documented recoveries if needed)
-- QuantumBit demo data / apps available; SDO Lightning theme **not** replaced by
-  QuantumBit branding
-- Summarize duration, org alias, branding strip confirmation, and any recoveries
+- QuantumBit apps/metadata deployed; product dataset present only if user said Yes
+- SDO Lightning theme **not** replaced by QuantumBit branding
+- Summarize duration, org alias, product-set Yes/No, branding strip, recoveries
 
-## If user says No
+## After this file
 
-Skip this entire file. Report that initial Revenue Cloud / Agentforce setup finished
-without QuantumBit.
+Return to SKILL.md: ask about optional **RLM Generic Demo Products**, then
+**always** run Step 7 (decision tables + PCM search index rebuild).

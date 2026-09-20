@@ -100,15 +100,16 @@ Smoke-check (adjust to what the org licenses):
 - A sample user (non-setup user) can open the same apps after admin-for-everyone
 - Pricing Sync completed without error when pricing was configured
 
-## Phase G — Generic demo products + index refresh
+## Phase G — Products (optional) + index refresh (always)
 
-16. **RLM Generic Demo Products** — After Phases A–E (and QuantumBit when Yes),
-    follow [generic-demo-products.md](generic-demo-products.md): clone/update
-    `vendor/cbs-demo-product-builder-skill`, read
-    `.cursor/skills/rlm-generic-demo-products/SKILL.md`, run against the
-    confirmed org. Phase 4b brand image only if the org is not already
-    rebranded for that company.
-17. **Refresh decision tables + rebuild PCM search index**
+16. **QuantumBit** — Always deploy per [quantumbit-deploy.md](quantumbit-deploy.md).
+    Before `prepare_rlm_org`, ask whether to deploy the **QuantumBit product set**:
+    - Yes → defaults (`qb` / `constraints_data` on)
+    - No → `-o qb false -o constraints_data false`
+17. **RLM Generic Demo Products (optional)** — After QuantumBit, ask whether to
+    launch the skill. If Yes, follow [generic-demo-products.md](generic-demo-products.md).
+    Phase 4b brand image only if the org is not already rebranded for that company.
+18. **Refresh decision tables + rebuild PCM search index (always)**
     ```bash
     cd vendor/rlm-base-dev
     cci flow run refresh_all_decision_tables --org <cci-alias> --no-prompt
@@ -117,9 +118,9 @@ Smoke-check (adjust to what the org licenses):
 
 ## Automation note
 
-If the user accepts the QuantumBit deploy, follow the **SDO deploy profile**
-in [quantumbit-deploy.md](quantumbit-deploy.md): strip QuantumBit Lightning
-branding, re-apply Timeline via Industries gold, run `prepare_rlm_org` with
-feature defaults, and auto-recover from payments-community / `enable_timeline`
-Robot flakes. Complete Phases A–E first. After QuantumBit (or after skipping it),
-always continue with Phase G ([generic-demo-products.md](generic-demo-products.md)).
+Always follow the **SDO deploy profile** in [quantumbit-deploy.md](quantumbit-deploy.md):
+strip QuantumBit Lightning branding, re-apply Timeline via Industries gold, run
+`prepare_rlm_org` (product set optional via `qb` / `constraints_data`), and
+auto-recover from payments-community / `enable_timeline` Robot flakes. Complete
+Phases A–E first. After QuantumBit, ask about optional generic demo products, then
+always run the decision-table / PCM index refresh.

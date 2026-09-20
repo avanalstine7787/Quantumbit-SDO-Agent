@@ -4,11 +4,12 @@ description: >
   Sets up Salesforce Agentforce Revenue Management, Revenue Cloud, and Salesforce
   Billing in a target org from Cursor. Asks for the target org first, prompts org
   authorization, assigns admin-for-everyone Revenue Cloud permissions, follows
-  Salesforce Help rev_agent_setup, optionally deploys QuantumBit rlm-base-dev with
-  the SDO deploy profile, then runs RLM Generic Demo Products and refreshes
-  decision tables / rebuilds the PCM search index. Use when the user asks to set up
-  Revenue Cloud, Agentforce Revenue Management, ARM, RLM, Salesforce Billing,
-  QuantumBit, rlm-base-dev, or generic demo products on an SDO or demo org.
+  Salesforce Help rev_agent_setup, always deploys QuantumBit rlm-base-dev (SDO
+  profile) with an optional QuantumBit product set, optionally launches RLM Generic
+  Demo Products, then always refreshes decision tables / rebuilds the PCM search
+  index. Use when the user asks to set up Revenue Cloud, Agentforce Revenue
+  Management, ARM, RLM, Salesforce Billing, QuantumBit, rlm-base-dev, or generic
+  demo products on an SDO or demo org.
 ---
 
 # Revenue Cloud SDO Setup (Cursor Agent)
@@ -22,17 +23,20 @@ deploy `AiAuthoringBundle` / `.agent` files.
 1. **Admin-for-everyone** — Assign the full admin/design-time Revenue Cloud,
    Billing, Pricing, PCM, and Agentforce permission set licenses and permission
    sets to every eligible active user (subject to PSL seats).
-2. **QuantumBit SDO deploy profile** — If the user says Yes to QuantumBit, follow
-   [references/quantumbit-deploy.md](references/quantumbit-deploy.md): strip
-   QuantumBit Lightning branding, ensure Timeline via Metadata, run
-   `prepare_rlm_org` with feature defaults (`billing_ui` / `ux` / `qb` kept on),
-   and automatically recover from payments-community and `enable_timeline` Robot
-   flakes. Do not permanently edit upstream `cumulusci.yml`.
-3. **Generic demo products + index refresh** — After Steps 1–4 (and after
-   QuantumBit when included), follow
-   [references/generic-demo-products.md](references/generic-demo-products.md):
-   run project-local `rlm-generic-demo-products`, then
-   `refresh_all_decision_tables` and `rebuild_search_index`.
+2. **Always deploy QuantumBit** — After Steps 1–4, always follow
+   [references/quantumbit-deploy.md](references/quantumbit-deploy.md) (clone,
+   strip branding, Timeline Metadata, `prepare_rlm_org`, resilient recovery).
+   Do not permanently edit upstream `cumulusci.yml`.
+3. **Optional QuantumBit product set** — Before `prepare_rlm_org`, ask whether to
+   load the QuantumBit demo product dataset. **No** →
+   `-o qb false -o constraints_data false`. **Yes** → repository defaults.
+4. **Optional generic demo products** — After QuantumBit finishes, ask whether to
+   launch `rlm-generic-demo-products`. **Yes** →
+   [references/generic-demo-products.md](references/generic-demo-products.md).
+   **No** → skip Step 6.
+5. **Always refresh index** — After QuantumBit (and Step 6 if run), always run
+   `refresh_all_decision_tables` then `rebuild_search_index`.
+
 ## Hard gate — first question
 
 On the **first turn**, before any other work:
@@ -148,36 +152,45 @@ after base Revenue Cloud is enabled. Typical themes (verify against Help each ru
 - Manage AI Agents and related agent permissions
 - Revenue agent template / topic / action prerequisites
 
-### Step 5 — QuantumBit optional deploy
+### Step 5 — Always deploy QuantumBit (optional product set)
 
-After initial setup succeeds, ask exactly:
+After Steps 1–4 succeed, **always** deploy QuantumBit per
+[references/quantumbit-deploy.md](references/quantumbit-deploy.md).
 
-> Do you want to deploy the QuantumBit repo from https://github.com/bgaldino/rlm-base-dev ?
+Before `prepare_rlm_org`, ask exactly:
 
-- **Yes** → Follow [references/quantumbit-deploy.md](references/quantumbit-deploy.md)
-  (clone, strip branding, Timeline Metadata, CCI connect, `prepare_rlm_org` with
-  SDO recovery rules). When finished (success or documented recovery), continue
-  to **Step 6**.
-- **No** → Skip QuantumBit and continue to **Step 6** immediately.
+> Do you want to deploy the QuantumBit product set (demo products and related product data)?
 
-### Step 6 — RLM Generic Demo Products
+- **Yes** → `cci flow run prepare_rlm_org --org <cci-alias>` (repository defaults;
+  `qb` / `constraints_data` on).
+- **No** →
+  `cci flow run prepare_rlm_org --org <cci-alias> -o qb false -o constraints_data false`
+  (QuantumBit apps/metadata still deploy; skip QB product dataset and constraint
+  sample product data).
 
-Follow [references/generic-demo-products.md](references/generic-demo-products.md):
+Do **not** ask whether to deploy the QuantumBit repo itself — that is always on.
+Keep `billing_ui`, `ux`, `billing`, etc. at defaults. When finished (success or
+documented recovery), continue to **Step 6**.
 
-1. Ensure `vendor/cbs-demo-product-builder-skill` is cloned and
-   `.cursor/skills/rlm-generic-demo-products` points at it.
-2. **Read** `.cursor/skills/rlm-generic-demo-products/SKILL.md` and run it
-   end-to-end against the **already-confirmed** target org (Phase 0 still asks
-   for company name + website).
-3. **Phase 4b brand image:** run only if the org is **not** already rebranded
-   for that company; skip if it already is. Prefer `QuantumBitSLDSv2` when
-   present; otherwise update the active Lightning theme. See
-   [generic-demo-products.md](references/generic-demo-products.md).
+### Step 6 — Optional RLM Generic Demo Products
 
-### Step 7 — Refresh decision tables + rebuild product index
+After QuantumBit finishes, ask exactly:
 
-After Step 6 completes, from `vendor/rlm-base-dev` (clone API-matched branch and
-CCI-connect if needed; do not run full `prepare_rlm_org` solely for this):
+> Do you want to launch the RLM Generic Demo Products skill for a custom company catalog?
+
+- **Yes** → Follow [references/generic-demo-products.md](references/generic-demo-products.md):
+  1. Ensure project skill `.cursor/skills/rlm-generic-demo-products/` is present
+     (refresh from upstream if needed).
+  2. **Read** `.cursor/skills/rlm-generic-demo-products/SKILL.md` and run it
+     end-to-end against the **already-confirmed** target org (Phase 0 still asks
+     for company name + website).
+  3. **Phase 4b brand image:** run only if the org is **not** already rebranded
+     for that company; skip if it already is.
+- **No** → Skip Step 6; continue to **Step 7**.
+
+### Step 7 — Always refresh decision tables + rebuild product index
+
+After Step 5 (and Step 6 if Yes), **always** run from `vendor/rlm-base-dev`:
 
 ```bash
 cd vendor/rlm-base-dev
@@ -185,7 +198,7 @@ cci flow run refresh_all_decision_tables --org <cci-alias> --no-prompt
 cci task run rebuild_search_index --org <cci-alias> --no-prompt
 ```
 
-Details: [references/generic-demo-products.md](references/generic-demo-products.md).
+Run even if both product asks were No.
 
 ## Tooling map
 
@@ -198,7 +211,7 @@ Details: [references/generic-demo-products.md](references/generic-demo-products.
 | Quotes on Opportunity layouts | `scripts/add_quotes_related_list_to_opportunity_layouts.py` |
 | Strip QB branding | `scripts/strip_quantumbit_branding.py` |
 | QuantumBit | Shell + CumulusCI in `vendor/rlm-base-dev` |
-| Generic demo products | `.cursor/skills/rlm-generic-demo-products/SKILL.md` |
+| Generic demo products | `.cursor/skills/rlm-generic-demo-products/SKILL.md` (optional ask) |
 | Decision tables + PCM index | `cci flow run refresh_all_decision_tables`, `cci task run rebuild_search_index` |
 
 Always use `--json` on `sf` commands. Do not invent Help steps when the article is available.
@@ -212,7 +225,7 @@ When finished, report:
 - Settings enabled (and which irreversible toggles were confirmed)
 - Opportunity layouts: Quotes related list updated count
 - Agentforce Revenue setup status
-- QuantumBit: skipped / succeeded / recovered (branding strip, Timeline Metadata,
-  payments or timeline recoveries)
-- Generic demo products: company, products created/reused, Phase 4b ran or skipped
+- QuantumBit: always deployed; product set Yes/No (`qb` / `constraints_data`);
+  recoveries if any
+- Generic demo products: skipped / ran (company, products, Phase 4b)
 - Decision tables refreshed + PCM search index rebuild status
