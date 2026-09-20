@@ -123,7 +123,7 @@ PSL_LABEL_PATTERNS: list[str] = [
 AGENTFORCE_PERMISSION_SET_NAMES: list[str] = [
     "AgentforceDefaultAdmin",
     "AgentforceDefaultAgentUser",
-    "AgentforceServiceAgentUser",
+    # AgentforceServiceAgentUser requires a bot/user license — skip for Standard users
     "EinsteinGPTPromptTemplateManager",
     "EinsteinGPTPromptTemplateUser",
     "PromptTemplateManager",

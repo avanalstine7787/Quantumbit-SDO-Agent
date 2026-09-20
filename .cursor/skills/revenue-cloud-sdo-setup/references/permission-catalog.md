@@ -156,7 +156,6 @@ becomes multi-hour):
 
 - `AgentforceDefaultAdmin`
 - `AgentforceDefaultAgentUser`
-- `AgentforceServiceAgentUser`
 - `EinsteinGPTPromptTemplateManager`
 - `EinsteinGPTPromptTemplateUser`
 - `PromptTemplateManager`
