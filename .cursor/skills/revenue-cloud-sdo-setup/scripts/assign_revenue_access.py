@@ -118,12 +118,18 @@ PSL_LABEL_PATTERNS: list[str] = [
     "Einstein Prompt Templates",
 ]
 
-AGENTFORCE_PS_PATTERNS: list[str] = [
-    "agentforce",
-    "einstein",
-    "genai",
-    "prompttemplate",
-    "manage ai agents",
+# Explicit Agentforce / Einstein names only — do NOT LIKE-scan %Einstein% on SDOs
+# (hundreds of permsets × users makes assign take hours).
+AGENTFORCE_PERMISSION_SET_NAMES: list[str] = [
+    "AgentforceDefaultAdmin",
+    "AgentforceDefaultAgentUser",
+    "AgentforceServiceAgentUser",
+    "EinsteinGPTPromptTemplateManager",
+    "EinsteinGPTPromptTemplateUser",
+    "PromptTemplateManager",
+    "PromptTemplateUser",
+    "ManageAIAgents",
+    "AgentPlatformBuilder",
 ]
 
 EXCLUDE_USERNAME_SUBSTRINGS: list[str] = [
@@ -237,23 +243,19 @@ def discover_psls(target_org: str) -> list[dict[str, Any]]:
 
 
 def discover_permsets(target_org: str) -> list[dict[str, Any]]:
-    names = "','".join(PERMISSION_SET_NAMES)
-    named = query_data(
-        f"SELECT Id, Name, Label FROM PermissionSet WHERE Name IN ('{names}') AND IsOwnedByProfile = false",
-        target_org,
-    )
-    # Agentforce / Einstein pattern scan (broader set; filter in Python)
-    extra = query_data(
-        "SELECT Id, Name, Label FROM PermissionSet WHERE IsOwnedByProfile = false "
-        "AND (Name LIKE '%Agentforce%' OR Name LIKE '%Einstein%' OR Name LIKE '%GenAI%' "
-        "OR Name LIKE '%Prompt%' OR Label LIKE '%Agentforce%' OR Label LIKE '%Einstein%' "
-        "OR Label LIKE '%AI Agent%')",
-        target_org,
-    )
-    by_id: dict[str, dict[str, Any]] = {r["Id"]: r for r in named}
-    for r in extra:
-        label = f"{r.get('Name') or ''} {r.get('Label') or ''}".lower()
-        if any(p in label for p in AGENTFORCE_PS_PATTERNS):
+    all_names = list(dict.fromkeys(PERMISSION_SET_NAMES + AGENTFORCE_PERMISSION_SET_NAMES))
+    # SOQL IN lists are capped; chunk if needed
+    by_id: dict[str, dict[str, Any]] = {}
+    chunk_size = 100
+    for i in range(0, len(all_names), chunk_size):
+        chunk = all_names[i : i + chunk_size]
+        names = "','".join(chunk)
+        named = query_data(
+            f"SELECT Id, Name, Label FROM PermissionSet WHERE Name IN ('{names}') "
+            "AND IsOwnedByProfile = false",
+            target_org,
+        )
+        for r in named:
             by_id[r["Id"]] = r
     return list(by_id.values())
 
@@ -350,24 +352,22 @@ def assign_all(target_org: str, dry_run: bool = False) -> Report:
                 report.ps_assigned += 1
                 continue
             try:
-                # Prefer CLI assign when possible for clearer errors
-                run_sf(
-                    ["org", "assign", "permset", "--name", name, "--on-behalf-of", uname],
+                # Direct DML is much faster than spawning `sf org assign permset` per row
+                create_record(
+                    "PermissionSetAssignment",
+                    {"AssigneeId": uid, "PermissionSetId": psid},
                     target_org,
                 )
                 report.ps_assigned += 1
                 existing_ps.add((uid, psid))
-            except Exception:
-                try:
-                    create_record(
-                        "PermissionSetAssignment",
-                        {"AssigneeId": uid, "PermissionSetId": psid},
-                        target_org,
-                    )
-                    report.ps_assigned += 1
-                    existing_ps.add((uid, psid))
-                except Exception as exc:  # noqa: BLE001
-                    report.ps_errors.append(f"{uname} / {name}: {exc}")
+            except Exception as exc:  # noqa: BLE001
+                report.ps_errors.append(f"{uname} / {name}: {exc}")
+
+        print(
+            f"Progress: finished user {uname} "
+            f"(PSL +{report.psl_assigned} / PS +{report.ps_assigned})",
+            flush=True,
+        )
 
     return report
 
