@@ -193,6 +193,18 @@ Never pass `--org` to:
 - SDO Lightning theme **not** replaced by QuantumBit branding
 - Summarize duration, org alias, product-set Yes/No, branding strip, recoveries
 
+#### PCM search index language error (`PCM_RUNTIME_SNAPSHOT_DEPLOY_014`)
+
+If `rebuild_search_index` warns with HTTP 400
+`Specify a valid supported language and a valid default language` and continues:
+
+1. Do **not** abort `prepare_rlm_org` — upstream already warns and continues by default.
+2. In Setup, open **Product Catalog Management** / **Build Catalog Index** (or Product
+   Discovery index settings) and set **Supported Languages** and **Default Language**
+   (typically `en_US`), then rebuild from the UI component.
+3. Document in the completion summary that Step 7 / index rebuild may need a manual
+   language fix before a successful Connect API rebuild.
+
 ## After this file
 
 Return to SKILL.md: ask about optional **RLM Generic Demo Products**, then
