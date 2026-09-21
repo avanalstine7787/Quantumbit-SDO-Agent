@@ -70,7 +70,8 @@ esac
 echo "Fetching org credentials for $TARGET_ORG..."
 ORG_JSON=$(sf org display --target-org "$TARGET_ORG" --json)
 INSTANCE_URL=$(echo "$ORG_JSON" | python3 -c "import sys,json; print(json.load(sys.stdin)['result']['instanceUrl'])")
-ACCESS_TOKEN=$(echo "$ORG_JSON" | python3 -c "import sys,json; print(json.load(sys.stdin)['result']['accessToken'])")
+# sf org display redacts accessToken; use show-access-token
+ACCESS_TOKEN=$(sf org auth show-access-token --target-org "$TARGET_ORG" --json 2>/dev/null | python3 -c "import sys,json; raw=sys.stdin.read(); d=json.JSONDecoder().raw_decode(raw[raw.find('{'):])[0]; print((d.get('result') or {}).get('accessToken') or d.get('accessToken') or '')")
 API_VERSION=$(echo "$ORG_JSON" | python3 -c "import sys,json; print(json.load(sys.stdin)['result'].get('apiVersion','66.0'))")
 ORG_USERNAME=$(echo "$ORG_JSON" | python3 -c "import sys,json; print(json.load(sys.stdin)['result'].get('username',''))")
 ORG_ID=$(echo "$ORG_JSON" | python3 -c "import sys,json; print(json.load(sys.stdin)['result'].get('id',''))")

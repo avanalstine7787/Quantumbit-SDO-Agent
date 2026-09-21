@@ -3,11 +3,13 @@ name: revenue-cloud-sdo-setup
 description: >
   Sets up Salesforce Agentforce Revenue Management, Revenue Cloud, and Salesforce
   Billing in a target org from Cursor. Asks for the target org first, prompts org
-  authorization, assigns admin-for-everyone Revenue Cloud permissions, follows
+  authorization, assigns Revenue Cloud permission set licenses and permission sets
+  to System Administrators only, follows
   Salesforce Help rev_agent_setup, always deploys QuantumBit rlm-base-dev (SDO
-  profile) with an optional QuantumBit product set, optionally launches RLM Generic
-  Demo Products, then always refreshes decision tables / rebuilds the PCM search
-  index. Use when the user asks to set up Revenue Cloud, Agentforce Revenue
+  profile) via the SDO prepare orchestrator with an optional QuantumBit product
+  set and Full vs fast profile, optionally launches RLM Generic Demo Products,
+  then always refreshes decision tables / rebuilds the PCM search index as the
+  last step. Use when the user asks to set up Revenue Cloud, Agentforce Revenue
   Management, ARM, RLM, Salesforce Billing, QuantumBit, rlm-base-dev, or generic
   demo products on an SDO or demo org.
 ---
@@ -20,24 +22,31 @@ deploy `AiAuthoringBundle` / `.agent` files.
 
 ## Locked policies
 
-1. **Admin-for-everyone** — Assign the full admin/design-time Revenue Cloud,
-   Billing, Pricing, PCM, and Agentforce permission set licenses and permission
-   sets to every eligible active user (subject to PSL seats).
+1. **System Administrators only** — Assign the catalog Revenue Cloud, Billing,
+   Pricing, PCM, and Agentforce permission set licenses, and the permission sets
+   that consume them, only to active users whose profile is System Administrator
+   (subject to PSL seats). Non-admin demo users do not receive these licenses.
 2. **Always deploy QuantumBit** — After Steps 1–4, always follow
    [references/quantumbit-deploy.md](references/quantumbit-deploy.md) (clone,
-   strip branding, Timeline Metadata, `prepare_rlm_org`, resilient recovery).
-   Do not permanently edit upstream `cumulusci.yml`.
-3. **Optional QuantumBit product set** — Before `prepare_rlm_org`, ask whether to
-   load the QuantumBit demo product dataset. **No** →
-   `-o qb false -o constraints_data false`. **Yes** → repository defaults.
-4. **Optional generic demo products** — After QuantumBit finishes, ask whether to
+   strip branding, Timeline Metadata, **SDO orchestrator** for `prepare_rlm_org`,
+   proactive payments/timeline flake avoidance). Do not permanently edit upstream
+   `cumulusci.yml`.
+3. **Optional QuantumBit product set** — Before prepare, ask whether to load the
+   QuantumBit demo product dataset. **No** → `--product-set no`. **Yes** →
+   `--product-set yes`.
+4. **SDO profile (Full vs fast)** — Before prepare, ask Full QuantumBit vs SDO
+   fast. Fast passes `-o payments|billing_portal|prm|agents|collections false`
+   via the orchestrator; `billing_ui` and `ux` stay on.
+5. **Optional generic demo products** — After QuantumBit finishes, ask whether to
    launch `rlm-generic-demo-products`. **Yes** → always sync from upstream per
    [references/generic-demo-products.md](references/generic-demo-products.md)
    (overwrite local skill; commit/push if changed), then run against the **Step 1
    org only** (no Phase 4 org-picker); skip Phase 4b only if Brand Image already
    matches this company’s logo. **No** → skip Step 6.
-5. **Always refresh index** — After QuantumBit (and Step 6 if run), always run
-   `refresh_all_decision_tables` then `rebuild_search_index`.
+6. **Decision tables + PCM index (always last)** — After Step 5 and after Step 6
+   if it ran, always run `refresh_all_decision_tables` then `rebuild_search_index`.
+   The SDO orchestrator skips prepare steps 32–33 so this happens exactly once,
+   after any generic catalog is created.
 
 ## Hard gate — first question
 
@@ -90,9 +99,10 @@ sf org display --json
   - Enhanced Commerce Orders
   - Transaction processing for quotes and orders
 
-### Step 2 — Admin-for-everyone permissions
+### Step 2 — System Administrator permissions
 
-Order: **PSLs first, then permission sets**.
+Order: **PSLs first**, then the permission sets that consume them. Both go only
+to active users with the **System Administrator** profile.
 
 1. Discover which catalog entries exist in this org (do not hard-fail on missing names).
 2. Run the assignment script from the workspace root (or skill directory):
@@ -100,6 +110,13 @@ Order: **PSLs first, then permission sets**.
 ```bash
 python3 .cursor/skills/revenue-cloud-sdo-setup/scripts/assign_revenue_access.py --target-org <alias>
 ```
+
+Uses **Composite sObject Collections** (batches of up to 200) for
+`PermissionSetLicenseAssign` / `PermissionSetAssignment`. Expect minutes on a
+typical SDO, not hours. Summary includes elapsed seconds and batch counts.
+Assigns the org's running user first and **reserves 1 seat** on scarce PSLs
+(`TotalLicenses <= 20`) so QuantumBit `prepare_rlm_org` can still assign core
+licenses to the automation user.
 
 3. Summarize assigned vs skipped (seat exhaustion). Continue even if some seats are full.
 
@@ -117,6 +134,9 @@ one-off toggles:
 python3 .cursor/skills/revenue-cloud-sdo-setup/scripts/deploy_org_settings_gold.py \
   --target-org <alias>
 ```
+
+Skip-if-done: the script retrieves Settings first and **skips deploy** when gold
+key fields already match (`--force` to redeploy anyway).
 
 Deploy order (handled by the script): Quote → Order → RevenueManagement →
 ProductConfigurator → IndustriesPricing → Industries (Timeline pref) → Billing
@@ -139,7 +159,8 @@ python3 .cursor/skills/revenue-cloud-sdo-setup/scripts/add_quotes_related_list_t
 ```
 
 Idempotent: appends `RelatedQuoteList` to every Opportunity page layout that
-does not already have it.
+does not already have it. Short-circuits (no second retrieve/deploy) when every
+Opportunity layout already includes `RelatedQuoteList`.
 
 Continue with BRE/CRE, Context Definitions, Sync Pricing Data, and Agentforce
 steps as in the checklist. Warn: `enableTransactionProcessor` is irreversible
@@ -154,25 +175,47 @@ after base Revenue Cloud is enabled. Typical themes (verify against Help each ru
 - Manage AI Agents and related agent permissions
 - Revenue agent template / topic / action prerequisites
 
-### Step 5 — Always deploy QuantumBit (optional product set)
+### Step 5 — Always deploy QuantumBit (optional product set + profile)
 
 After Steps 1–4 succeed, **always** deploy QuantumBit per
 [references/quantumbit-deploy.md](references/quantumbit-deploy.md).
 
-Before `prepare_rlm_org`, ask exactly:
+Before prepare, ask **both**:
 
-> Do you want to deploy the QuantumBit product set (demo products and related product data)?
+1. > Do you want to deploy the QuantumBit product set (demo products and related product data)?
+   - **Yes** → `--product-set yes`
+   - **No** → `--product-set no` (apps/metadata still deploy; skip QB product
+     dataset and constraint sample data)
 
-- **Yes** → `cci flow run prepare_rlm_org --org <cci-alias>` (repository defaults;
-  `qb` / `constraints_data` on).
-- **No** →
-  `cci flow run prepare_rlm_org --org <cci-alias> -o qb false -o constraints_data false`
-  (QuantumBit apps/metadata still deploy; skip QB product dataset and constraint
-  sample product data).
+2. > Which QuantumBit SDO profile should Step 5 use?
+   - **Full QuantumBit** → `--profile full` (all default feature flags;
+     orchestration wins only: payments preflight + skip Timeline Robot)
+   - **SDO fast** → `--profile fast` (also `-o payments false`,
+     `-o billing_portal false`, `-o prm false`, `-o agents false`,
+     `-o collections false`). Keep `billing_ui` and `ux` on.
 
 Do **not** ask whether to deploy the QuantumBit repo itself — that is always on.
-Keep `billing_ui`, `ux`, `billing`, etc. at defaults. When finished (success or
-documented recovery), continue to **Step 6**.
+Do **not** permanently edit `cumulusci.yml`. Do **not** use `-o tso true` to skip
+Timeline Robot.
+
+**Primary command** (after clone, branding strip, Timeline gold):
+
+```bash
+python3 .cursor/skills/revenue-cloud-sdo-setup/scripts/run_prepare_rlm_org_sdo.py \
+  --org <cci-alias> \
+  --sf-org <sf-alias-or-username> \
+  --repo-root vendor/rlm-base-dev \
+  --profile <full|fast> \
+  --product-set <yes|no> \
+  --timings-file /tmp/prepare_rlm_org_sdo_timings.jsonl
+```
+
+**Expect a long Step 5** (still upstream-dominated; Full baseline ~81 min on
+SDOTest5 before this orchestrator). The orchestrator removes Timeline Robot
+abort/resume and payments create timeout loops; include the per-step timing
+table in the completion summary. Resume with `--from-step N` on failure.
+
+When finished (success or documented recovery), continue to **Step 6**.
 
 ### Step 6 — Optional RLM Generic Demo Products
 
@@ -201,9 +244,15 @@ After QuantumBit finishes, ask exactly:
      missing, stop and inform (upstream behavior).
 - **No** → Skip Step 6; continue to **Step 7**.
 
-### Step 7 — Always refresh decision tables + rebuild product index
+Generic catalog research and image generation are not a speed target. Leave that
+path as written unless a timing table shows Step 6 is the second-largest step
+after prepare.
 
-After Step 5 (and Step 6 if Yes), **always** run from `vendor/rlm-base-dev`:
+### Step 7 — Always refresh decision tables + rebuild catalog index (last)
+
+After Step 5 (and Step 6 if Yes), **always** run from `vendor/rlm-base-dev`.
+This is the last step of the entire process. The orchestrator does not run
+prepare steps 32–33.
 
 ```bash
 cd vendor/rlm-base-dev
@@ -223,9 +272,9 @@ Run even if both product asks were No.
 | Gold org settings | `scripts/deploy_org_settings_gold.py` |
 | Quotes on Opportunity layouts | `scripts/add_quotes_related_list_to_opportunity_layouts.py` |
 | Strip QB branding | `scripts/strip_quantumbit_branding.py` |
-| QuantumBit | Shell + CumulusCI in `vendor/rlm-base-dev` |
+| QuantumBit prepare (SDO) | `scripts/run_prepare_rlm_org_sdo.py` + CumulusCI in `vendor/rlm-base-dev` |
 | Generic demo products | Sync upstream then `.cursor/skills/rlm-generic-demo-products/SKILL.md` (optional ask) |
-| Decision tables + PCM index | `cci flow run refresh_all_decision_tables`, `cci task run rebuild_search_index` |
+| Decision tables + PCM index | `cci flow run refresh_all_decision_tables`, `cci task run rebuild_search_index` (always Step 7, last) |
 
 Always use `--json` on `sf` commands. Do not invent Help steps when the article is available.
 
@@ -238,8 +287,10 @@ When finished, report:
 - Settings enabled (and which irreversible toggles were confirmed)
 - Opportunity layouts: Quotes related list updated count
 - Agentforce Revenue setup status
-- QuantumBit: always deployed; product set Yes/No (`qb` / `constraints_data`);
-  recoveries if any
+- QuantumBit: always deployed; **profile** Full/fast; product set Yes/No;
+  orchestrator timings (per-step table); Timeline Robot skipped; payments
+  preflight action; recoveries if any
 - Generic demo products: skipped / ran (upstream sync status, company, products,
   Phase 4b ran/skipped-for-matching-logo)
-- Decision tables refreshed + PCM search index rebuild status
+- Decision tables refreshed + PCM search index rebuild status (always last)
+- Validation note: Full Step 5 vs SDOTest5 ~81 min baseline when timed

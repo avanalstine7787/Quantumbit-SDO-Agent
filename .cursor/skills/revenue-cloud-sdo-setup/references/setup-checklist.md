@@ -21,7 +21,9 @@ they disagree.
 ## Phase A — Foundation (before Agentforce)
 
 1. **Permission set licenses, then permission sets**
-   - Use admin-for-everyone via `scripts/assign_revenue_access.py`
+   - Assign only to active System Administrator users via `scripts/assign_revenue_access.py`
+     (Composite batched assigns; summary includes elapsed time and how many
+     non-admin users were skipped)
    - See [permission-catalog.md](permission-catalog.md)
 
 2. **Release Update: Enable New Order Save Behavior**
@@ -36,6 +38,7 @@ they disagree.
      python3 .cursor/skills/revenue-cloud-sdo-setup/scripts/deploy_org_settings_gold.py \
        --target-org <alias>
      ```
+   - Skip-if-done when gold key fields already match (`--force` to redeploy)
    - Source: [org-settings-gold/](org-settings-gold/) — Quote, Order,
      RevenueManagement, ProductConfigurator, IndustriesPricing, Industries
      (`enableTimelinePref` for Billing UI / Timeline), Billing (portable toggles
@@ -52,7 +55,8 @@ they disagree.
        --target-org <alias>
      ```
    - Adds `RelatedQuoteList` to every Opportunity page layout that lacks it
-     (idempotent). Required so Opportunity records show Quotes in related lists.
+     (idempotent; short-circuits when all layouts already have it). Required so
+     Opportunity records show Quotes in related lists.
 
 ## Phase B — Configurator and pricing (post-gold)
 
@@ -96,16 +100,19 @@ they disagree.
 
 Smoke-check (adjust to what the org licenses):
 
-- App Launcher opens Product Catalog Management, Quotes, Orders, Billing (if licensed)
-- A sample user (non-setup user) can open the same apps after admin-for-everyone
+- App Launcher opens Product Catalog Management, Quotes, Orders, Billing (if licensed) for a System Administrator
+- Do not expect a non-admin sample user to open those apps; catalog PSLs are not assigned to them
 - Pricing Sync completed without error when pricing was configured
 
-## Phase G — Products (optional) + index refresh (always)
+## Phase G — Products (optional) + index refresh (always last)
 
-16. **QuantumBit** — Always deploy per [quantumbit-deploy.md](quantumbit-deploy.md).
-    Before `prepare_rlm_org`, ask whether to deploy the **QuantumBit product set**:
-    - Yes → defaults (`qb` / `constraints_data` on)
-    - No → `-o qb false -o constraints_data false`
+16. **QuantumBit** — Always deploy per [quantumbit-deploy.md](quantumbit-deploy.md)
+    using `scripts/run_prepare_rlm_org_sdo.py`. Before prepare, ask:
+    - **Product set** — Yes → `--product-set yes`; No → `--product-set no`
+    - **SDO profile** — Full → `--profile full`; SDO fast → `--profile fast`
+      (`payments` / `billing_portal` / `prm` / `agents` / `collections` off;
+      `billing_ui` + `ux` stay on)
+    The orchestrator skips prepare steps 32–33.
 17. **RLM Generic Demo Products (optional)** — After QuantumBit, ask whether to
     launch the skill. If Yes, **always sync** from
     https://github.com/aaronlong78/8-9-26-CBS-SEs-demo-product-builder-skill
@@ -114,18 +121,27 @@ Smoke-check (adjust to what the org licenses):
     Always use the Step 1 confirmed org (no Phase 4 org-picker). Skip Phase 4b
     only if `QuantumBitSLDSv2` Brand Image already matches this company’s logo;
     otherwise rebrand as written.
-18. **Refresh decision tables + rebuild PCM search index (always)**
+18. **Refresh decision tables + rebuild PCM search index (always last)**
     ```bash
     cd vendor/rlm-base-dev
     cci flow run refresh_all_decision_tables --org <cci-alias> --no-prompt
     cci task run rebuild_search_index --org <cci-alias> --no-prompt
     ```
+    Run even if both product asks were No. Note: PCM index language soft-fails
+    (`PCM_RUNTIME_SNAPSHOT_DEPLOY_014`) may still need a manual UI pass until a
+    reliable API fix exists. Do not treat that as a setup abort.
 
 ## Automation note
 
 Always follow the **SDO deploy profile** in [quantumbit-deploy.md](quantumbit-deploy.md):
 strip QuantumBit Lightning branding, re-apply Timeline via Industries gold, run
-`prepare_rlm_org` (product set optional via `qb` / `constraints_data`), and
-auto-recover from payments-community / `enable_timeline` Robot flakes. Complete
-Phases A–E first. After QuantumBit, ask about optional generic demo products, then
-always run the decision-table / PCM index refresh.
+the **SDO orchestrator** (payments preflight + skip Timeline Robot; optional
+Full vs fast `-o` flags; product set via `--product-set`). Do not edit
+`cumulusci.yml` to shorten Step 5. Full-profile baseline before orchestrator:
+~81 min (SDOTest5). Validate future Full timed runs against that baseline.
+Steps 2–3 are already short on a fresh org after Composite assign and one-pass
+gold deploy; do not micro-optimize them unless a run exceeds a couple of minutes.
+Generic demo product image research is not a speed target. Complete Phases A–E
+first. After QuantumBit, ask about optional generic demo products, then always
+run the decision-table / PCM index refresh as the last step. PCM index
+language soft-fails (`PCM_RUNTIME_SNAPSHOT_DEPLOY_014`) stay a manual UI fix.

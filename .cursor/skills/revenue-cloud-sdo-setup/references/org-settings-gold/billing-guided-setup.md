@@ -37,9 +37,8 @@ and deploy fails.
 
 Gold includes [Industries.settings-meta.xml](Industries.settings-meta.xml) with
 `enableTimelinePref=true` (same Metadata path TSO builds use). Deploy this in
-Phase A and again immediately before QuantumBit `prepare_rlm_org` so Billing UI
-flexipages that reference Timeline can deploy even if the Robot
-`enable_timeline` task flakes. If Robot still fails after Metadata is on, continue
-`prepare_billing` from `deploy_billing_id_settings` / `deploy_post_billing_ui`
-per [quantumbit-deploy.md](../quantumbit-deploy.md) — do not leave `billing_ui`
-undeployed.
+Phase A and again immediately before QuantumBit prepare so Billing UI flexipages
+that reference Timeline can deploy. The SDO orchestrator
+(`run_prepare_rlm_org_sdo.py`) **skips** Robot `enable_timeline` after Metadata
+is on — do not wait for a Robot flake. Fallback recovery (if Metadata was
+missing) is in [quantumbit-deploy.md](../quantumbit-deploy.md).

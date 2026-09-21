@@ -2,8 +2,9 @@
 
 **Optional Step 6** after QuantumBit always completes. Only run the generic
 products skill when the user answers **Yes** to the Step 6 ask in SKILL.md.
-**Step 7** (decision tables + PCM index) **always** runs afterward, even if
-Step 6 was skipped.
+**Step 7** (decision tables + PCM index) **always** runs last afterward, whether
+Step 6 ran or was skipped. The SDO orchestrator skips prepare steps 32–33 so
+this is the only refresh/index pass.
 
 Upstream skill source:
 
@@ -74,12 +75,12 @@ Do not use a global/personal install of this skill.
 ## Sequencing (locked)
 
 1. Steps 1–4 (Revenue Cloud / ARM setup)
-2. Step 5 — **always** QuantumBit (`prepare_rlm_org`; product set Yes/No via `qb` /
-   `constraints_data`)
+2. Step 5 — **always** QuantumBit via `run_prepare_rlm_org_sdo.py` (product set
+   Yes/No; Full vs SDO-fast profile)
 3. Ask: launch RLM Generic Demo Products?
-   - **Yes** → required preflight (sync) → Step 6 below
+   - **Yes** → required preflight (sync) → Step 6 below → **always** Step 7
    - **No** → skip to Step 7
-4. Step 7 — **always** refresh decision tables + rebuild PCM search index
+4. Step 7 — **always last**: refresh decision tables + rebuild PCM search index
 
 ## Step 6 — Run generic demo products (only if user said Yes)
 
@@ -124,10 +125,10 @@ Scripts under `.cursor/skills/rlm-generic-demo-products/scripts/` (e.g.
 `update-theme-brand-image.sh`, `upload-static-resource.sh`) must receive the
 confirmed org username as their org argument. Never `sf config set --global`.
 
-## Step 7 — Refresh decision tables + rebuild product index (always)
+## Step 7 — Refresh decision tables + rebuild product index (always last)
 
 “Design tables” means **decision tables**. From `vendor/rlm-base-dev` (already
-cloned in Step 5):
+cloned in Step 5). Always run after Step 5 and after Step 6 if it ran:
 
 ```bash
 cd vendor/rlm-base-dev

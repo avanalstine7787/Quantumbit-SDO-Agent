@@ -4,7 +4,7 @@
     <enableAdvancedDetailLinePricing>false</enableAdvancedDetailLinePricing>
     <enableAsIsRenewals>true</enableAsIsRenewals>
     <enableAutoAddDerivedAsset>true</enableAutoAddDerivedAsset>
-    <enableConfigurePriceScale>false</enableConfigurePriceScale>
+    <!-- enableConfigurePriceScale: omit — rejected on some API 67 / release-262 orgs -->
     <!-- enableContextReuse: present on EFM2; omit from default gold deploy if
          target rejects the field (common on some API/org builds). Prefer
          enabling via UI/Help when Metadata deploy fails with that field name. -->

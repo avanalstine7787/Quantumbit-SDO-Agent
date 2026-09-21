@@ -1,8 +1,9 @@
-# Permission Catalog (Admin-for-Everyone)
+# Permission Catalog (System Administrators)
 
 Assign **PSLs first**, then **permission sets**. Discover what exists in the target
-org; skip missing names. Assign the full admin/design catalog to every eligible
-active user (see `scripts/assign_revenue_access.py`).
+org; skip missing names. Assign the catalog only to active users whose profile is
+System Administrator (see `scripts/assign_revenue_access.py`). Non-admin demo
+users do not receive these licenses.
 
 Sources:
 
@@ -48,7 +49,7 @@ match is missing.
 
 ## Permission sets (API Name → Label)
 
-Assign all that exist. Admin/design entries are required for admin-for-everyone;
+Assign all that exist to System Administrators. Admin/design entries are required;
 viewer/runtime entries are included when present (not as a ceiling).
 
 ### Product catalog and discovery
@@ -151,7 +152,7 @@ viewer/runtime entries are included when present (not as a ceiling).
 ### Agentforce / Einstein (explicit allowlist)
 
 Assign only these permission set **Names** when present (do **not** LIKE-scan
-`%Einstein%` / `%Agentforce%` — SDOs contain hundreds and admin-for-everyone
+`%Einstein%` / `%Agentforce%` — SDOs contain hundreds and a broad assign
 becomes multi-hour):
 
 - `AgentforceDefaultAdmin`
@@ -168,11 +169,12 @@ Developer/Admin, Einstein Agent, Einstein Prompt Templates).
 
 ## Users to include / exclude
 
-**Include:** `User` where `IsActive = true` and `UserType = 'Standard'` (and other
-interactive user types that can hold PSLs if present).
+**Include:** active users whose `Profile.Name` is `System Administrator`
+(case-insensitive exact match), after the exclusions below.
 
 **Exclude:**
 
+- Anyone who is not a System Administrator
 - Automated Process / Platform Integration User patterns
 - Chatter Free / Chatter Guest when they cannot hold the licenses
 - Users that fail assignment with LICENSE_LIMIT_EXCEEDED (record and continue)

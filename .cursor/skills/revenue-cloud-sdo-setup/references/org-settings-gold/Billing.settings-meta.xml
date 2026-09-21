@@ -12,14 +12,16 @@
     <enableDunningOrchestration>true</enableDunningOrchestration>
     <enableEnhancedPaymentData>true</enableEnhancedPaymentData>
     <enableFailedPaymentsRetry>true</enableFailedPaymentsRetry>
-    <enableForeignExchangeTrxnJrnlCreation>true</enableForeignExchangeTrxnJrnlCreation>
     <enableInvoiceEmailDelivery>true</enableInvoiceEmailDelivery>
     <enableInvoicePdfGeneration>true</enableInvoicePdfGeneration>
     <enableMilestoneBillingForAmend>true</enableMilestoneBillingForAmend>
     <enableNegInvoiceLnConversionToCrMemoLn>true</enableNegInvoiceLnConversionToCrMemoLn>
     <enablePaymentApplicationToPostedInvoices>true</enablePaymentApplicationToPostedInvoices>
     <enablePaymentSchedulesAndItemsCreation>true</enablePaymentSchedulesAndItemsCreation>
-    <enableTransactionJournalCreation>true</enableTransactionJournalCreation>
+    <!-- Journal / FX toggles often reject until accounting prerequisites exist;
+         deploy_org_settings_gold.py auto-omits on Metadata reject. Prefer leaving
+         them out of the static gold for API 67 SDOs:
+         enableTransactionJournalCreation, enableForeignExchangeTrxnJrnlCreation,
+         enableTrxnAmountsStorageInCorpCurrency -->
     <enableTransactionsApplicationToInvoices>true</enableTransactionsApplicationToInvoices>
-    <enableTrxnAmountsStorageInCorpCurrency>true</enableTrxnAmountsStorageInCorpCurrency>
 </BillingSettings>

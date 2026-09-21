@@ -125,6 +125,71 @@ def list_opportunity_layout_names(target_org: str) -> list[str]:
     return sorted(set(names))
 
 
+def layouts_already_have_quotes(target_org: str, layout_names: list[str]) -> bool:
+    """True when every Opportunity layout already includes RelatedQuoteList.
+
+    Uses a lightweight Metadata retrieve into a temp project; returns False on
+    any retrieve/parse issue so the main path can still patch.
+    """
+    if not layout_names:
+        return False
+    with tempfile.TemporaryDirectory(prefix="opp-quotes-check-") as tmp:
+        tmp_path = Path(tmp)
+        project = tmp_path / "project"
+        (project / "force-app" / "main" / "default").mkdir(parents=True)
+        (project / "sfdx-project.json").write_text(
+            json.dumps(
+                {
+                    "packageDirectories": [{"path": "force-app", "default": True}],
+                    "namespace": "",
+                    "sfdcLoginUrl": "https://login.salesforce.com",
+                    "sourceApiVersion": "67.0",
+                },
+                indent=2,
+            )
+            + "\n"
+        )
+        batch_size = 20
+        try:
+            for i in range(0, len(layout_names), batch_size):
+                batch = layout_names[i : i + batch_size]
+                meta_args: list[str] = []
+                for name in batch:
+                    meta_args.extend(["--metadata", f"Layout:{name}"])
+                run_sf(
+                    [
+                        "project",
+                        "retrieve",
+                        "start",
+                        *meta_args,
+                        "--target-org",
+                        target_org,
+                        "--json",
+                    ],
+                    cwd=project,
+                )
+        except RuntimeError as exc:
+            print(f"Quotes short-circuit check failed; will continue. ({exc})", flush=True)
+            return False
+
+        layout_files = sorted(project.rglob("Opportunity-*.layout-meta.xml"))
+        if len(layout_files) < len(layout_names):
+            print(
+                f"Quotes short-circuit: retrieved {len(layout_files)}/"
+                f"{len(layout_names)} layouts — will continue.",
+                flush=True,
+            )
+            return False
+        missing = [p.name for p in layout_files if "RelatedQuoteList" not in p.read_text(encoding="utf-8")]
+        if missing:
+            print(
+                f"Quotes short-circuit: {len(missing)} layout(s) lack RelatedQuoteList.",
+                flush=True,
+            )
+            return False
+        return True
+
+
 def patch_layout_xml(text: str) -> tuple[str, bool]:
     """Return (new_text, changed)."""
     if "RelatedQuoteList" in text:
@@ -171,6 +236,14 @@ def main() -> int:
         print("No Opportunity layouts found.", file=sys.stderr)
         return 1
     print(f"Found {len(layout_names)} Opportunity layout(s).")
+
+    print("Checking whether RelatedQuoteList is already on all layouts...")
+    if layouts_already_have_quotes(target, layout_names):
+        print(
+            f"Done. updated=0 already-present={len(layout_names)} "
+            "(skip retrieve/deploy — all layouts have RelatedQuoteList)."
+        )
+        return 0
 
     with tempfile.TemporaryDirectory(prefix="opp-layouts-") as tmp:
         tmp_path = Path(tmp)
