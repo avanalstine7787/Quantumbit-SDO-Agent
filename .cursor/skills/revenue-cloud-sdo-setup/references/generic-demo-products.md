@@ -84,21 +84,33 @@ Do not use a global/personal install of this skill.
 ## Step 6 — Run generic demo products (only if user said Yes)
 
 1. Complete **Required preflight** above (sync + commit/push if needed).
-2. **Read** `.cursor/skills/rlm-generic-demo-products/SKILL.md` and execute it.
-3. **Org handoff:** Use the org already confirmed in revenue-cloud-sdo-setup Step 1.
-   When Phase 4 asks for org, pre-select that username/alias — do not re-auth from scratch.
+2. **Read** `.cursor/skills/rlm-generic-demo-products/SKILL.md` and execute it
+   with the overlays below.
+3. **Org handoff (locked):** Always use the org confirmed in revenue-cloud-sdo-setup
+   Step 1. **Never** run the generic skill’s Phase 4 org-picker, never list other
+   connected orgs for selection, never re-auth from scratch. Pass that
+   username/alias as `--target-org` / helper-script third arg on every command.
+   Still print/verify username + org Id before any upload.
 4. **Phase 0** still asks for company name + website (interactive).
 
-### Branding (no skip overlay)
+### Branding (Phase 4b — company-logo match skip)
 
-Always run Phase 4b and any other branding steps **as written** in
-`.cursor/skills/rlm-generic-demo-products/SKILL.md` (org Themes and Branding
-brand-image replace on `QuantumBitSLDSv2`, etc.). Do **not** skip rebranding
-because the org already looks rebranded.
+Run Phase 4b **as written** in `.cursor/skills/rlm-generic-demo-products/SKILL.md`
+unless the org is **already branded for this run’s company**.
+
+**Skip Phase 4b** only when theme `QuantumBitSLDSv2` Brand Image (`BRAND_IMAGE`
+`/file-asset/…`) already corresponds to **this company’s** logo — e.g. ContentAsset
+developer name / master label matches the sanitized company asset name for this
+run (such as `TollBrothers_BrandLogo`), or the asset is clearly from this company’s
+Phase 1 logo.
+
+**Otherwise** run Phase 4b (`update-theme-brand-image.sh`). If theme
+`QuantumBitSLDSv2` is missing, stop and inform the user (upstream behavior — do
+not invent an alternate theme).
 
 SDO QuantumBit strip **preserves** theme `QuantumBitSLDSv2` (and its branding
-set) so Phase 4b can run; it only removes the active-theme settings and logo
-static resources so QuantumBit is not forced as the org default theme.
+set) so Phase 4b can run when needed; it only removes the active-theme settings
+and logo static resources so QuantumBit is not forced as the org default theme.
 
 **Auth token:** `sf org display --json` redacts `accessToken`. Local helper
 scripts under `.cursor/skills/rlm-generic-demo-products/scripts/` must use

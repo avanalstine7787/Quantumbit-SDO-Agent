@@ -33,7 +33,9 @@ deploy `AiAuthoringBundle` / `.agent` files.
 4. **Optional generic demo products** — After QuantumBit finishes, ask whether to
    launch `rlm-generic-demo-products`. **Yes** → always sync from upstream per
    [references/generic-demo-products.md](references/generic-demo-products.md)
-   (overwrite local skill; commit/push if changed), then run. **No** → skip Step 6.
+   (overwrite local skill; commit/push if changed), then run against the **Step 1
+   org only** (no Phase 4 org-picker); skip Phase 4b only if Brand Image already
+   matches this company’s logo. **No** → skip Step 6.
 5. **Always refresh index** — After QuantumBit (and Step 6 if run), always run
    `refresh_all_decision_tables` then `rebuild_search_index`.
 
@@ -188,10 +190,15 @@ After QuantumBit finishes, ask exactly:
      remotes; on push failure report and continue). If unchanged, report already
      current.
   3. **Read** `.cursor/skills/rlm-generic-demo-products/SKILL.md` and run it
-     end-to-end against the **already-confirmed** target org (Phase 0 still asks
-     for company name + website).
-  4. **Phase 4b brand image:** always run org brand-image replace **as written**
-     in the generic skill (do not skip if the org already looks rebranded).
+     end-to-end. Phase 0 still asks for company name + website.
+  4. **Org (locked):** Always use the org confirmed in Step 1. **Do not** run the
+     generic skill’s Phase 4 org-picker / org list. Pass that username/alias on
+     every `sf` command and helper script; still print/verify username + org Id
+     before uploads.
+  5. **Phase 4b brand image:** Skip **only** if theme `QuantumBitSLDSv2` Brand
+     Image already matches **this run’s company** logo (ContentAsset name/label
+     for this company). Otherwise run Phase 4b as written. If the theme is
+     missing, stop and inform (upstream behavior).
 - **No** → Skip Step 6; continue to **Step 7**.
 
 ### Step 7 — Always refresh decision tables + rebuild product index
@@ -233,5 +240,6 @@ When finished, report:
 - Agentforce Revenue setup status
 - QuantumBit: always deployed; product set Yes/No (`qb` / `constraints_data`);
   recoveries if any
-- Generic demo products: skipped / ran (upstream sync status, company, products, Phase 4b)
+- Generic demo products: skipped / ran (upstream sync status, company, products,
+  Phase 4b ran/skipped-for-matching-logo)
 - Decision tables refreshed + PCM search index rebuild status

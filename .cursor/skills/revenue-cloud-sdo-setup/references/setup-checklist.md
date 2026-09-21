@@ -111,7 +111,9 @@ Smoke-check (adjust to what the org licenses):
     https://github.com/aaronlong78/8-9-26-CBS-SEs-demo-product-builder-skill
     (overwrite local skill; auto commit/push to `origin` + `sfemu` if changed),
     then follow [generic-demo-products.md](generic-demo-products.md).
-    Always run Phase 4b org rebrand as written in the generic skill (no skip).
+    Always use the Step 1 confirmed org (no Phase 4 org-picker). Skip Phase 4b
+    only if `QuantumBitSLDSv2` Brand Image already matches this company’s logo;
+    otherwise rebrand as written.
 18. **Refresh decision tables + rebuild PCM search index (always)**
     ```bash
     cd vendor/rlm-base-dev
