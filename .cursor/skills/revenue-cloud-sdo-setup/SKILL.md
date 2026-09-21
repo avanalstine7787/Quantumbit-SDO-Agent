@@ -190,8 +190,8 @@ After QuantumBit finishes, ask exactly:
   3. **Read** `.cursor/skills/rlm-generic-demo-products/SKILL.md` and run it
      end-to-end against the **already-confirmed** target org (Phase 0 still asks
      for company name + website).
-  4. **Phase 4b brand image:** run only if the org is **not** already rebranded
-     for that company; skip if it already is.
+  4. **Phase 4b brand image:** always run org brand-image replace **as written**
+     in the generic skill (do not skip if the org already looks rebranded).
 - **No** → Skip Step 6; continue to **Step 7**.
 
 ### Step 7 — Always refresh decision tables + rebuild product index

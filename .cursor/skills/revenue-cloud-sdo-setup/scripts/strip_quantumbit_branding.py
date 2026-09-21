@@ -1,9 +1,12 @@
 #!/usr/bin/env python3
 """Strip QuantumBit Lightning org branding from a local rlm-base-dev checkout.
 
-Removes BrandingSets, LightningExperienceThemes, active-theme settings, and
-QuantumBit logo static resources from unpackaged/post_quantumbit so
-deploy_quantumbit does not overwrite the SDO's Lightning theme.
+Removes the active-theme settings and QuantumBit logo static resources so
+deploy_quantumbit does not force QuantumBit as the org's Lightning theme.
+
+**Keeps** theme ``QuantumBitSLDSv2``, its branding set, and the rectangle
+ContentAsset so Step 6 Phase 4b (rlm-generic-demo-products) can replace the
+Brand Image as written. Does not activate that theme.
 
 Mutates the vendor working tree (expect dirty git / stamp \"dirty\").
 Run after clone/checkout and before prepare_rlm_org.
@@ -12,31 +15,23 @@ Run after clone/checkout and before prepare_rlm_org.
 from __future__ import annotations
 
 import argparse
-import shutil
 import sys
 from pathlib import Path
 
 # Paths relative to rlm-base-dev repo root
-DIRS_TO_REMOVE = [
-    "unpackaged/post_quantumbit/brandingSets",
-    "unpackaged/post_quantumbit/lightningExperienceThemes",
-]
-
 FILES_TO_REMOVE = [
+    # Do not activate QuantumBit as the org default theme
     "unpackaged/post_quantumbit/settings/LightningExperience.settings-meta.xml",
+    # Extra QB theme (keep only QuantumBitSLDSv2 for Phase 4b)
+    "unpackaged/post_quantumbit/lightningExperienceThemes/QuantumBit.lightningExperienceTheme-meta.xml",
+    "unpackaged/post_quantumbit/brandingSets/LEXTHEMINGQuantumBit.brandingSet-meta.xml",
 ]
 
-# Logo static resource basenames (delete binary + -meta.xml; SFDMU uses .png)
+# Logo static resource basenames (delete binary + -meta.xml)
 LOGO_STATIC_BASENAMES = [
     "RLM_quantum_bit_logo",
     "RLM_quantumBit_logo_sq",
 ]
-LOGO_SUFFIXES = (
-    ".resource",
-    ".resource-meta.xml",
-    ".png",
-    ".png-meta.xml",
-)
 
 
 def remove_path(path: Path, removed: list[str], missing: list[str]) -> None:
@@ -44,6 +39,8 @@ def remove_path(path: Path, removed: list[str], missing: list[str]) -> None:
         missing.append(str(path))
         return
     if path.is_dir():
+        import shutil
+
         shutil.rmtree(path)
     else:
         path.unlink()
@@ -54,9 +51,6 @@ def strip_branding(repo_root: Path) -> tuple[list[str], list[str]]:
     removed: list[str] = []
     missing: list[str] = []
 
-    for rel in DIRS_TO_REMOVE:
-        remove_path(repo_root / rel, removed, missing)
-
     for rel in FILES_TO_REMOVE:
         remove_path(repo_root / rel, removed, missing)
 
@@ -66,12 +60,24 @@ def strip_branding(repo_root: Path) -> tuple[list[str], list[str]]:
             for path in static_dir.glob(f"{base}*"):
                 if path.is_file():
                     remove_path(path, removed, missing)
-            for suffix in LOGO_SUFFIXES:
-                exact = static_dir / f"{base}{suffix}"
-                if exact.exists() and str(exact) not in removed:
-                    remove_path(exact, removed, missing)
     else:
         missing.append(str(static_dir))
+
+    # Preserve QuantumBitSLDSv2 theme + branding set + rectangle ContentAsset
+    keep_theme = (
+        repo_root
+        / "unpackaged/post_quantumbit/lightningExperienceThemes"
+        / "QuantumBitSLDSv2.lightningExperienceTheme-meta.xml"
+    )
+    keep_brand = (
+        repo_root
+        / "unpackaged/post_quantumbit/brandingSets"
+        / "LEXTHEMINGQuantumBitSLDSv2.brandingSet-meta.xml"
+    )
+    if not keep_theme.is_file():
+        missing.append(f"REQUIRED for Phase 4b (missing): {keep_theme}")
+    if not keep_brand.is_file():
+        missing.append(f"REQUIRED for Phase 4b (missing): {keep_brand}")
 
     return removed, missing
 
@@ -81,35 +87,21 @@ def main() -> int:
     parser.add_argument(
         "--repo-root",
         type=Path,
-        default=None,
-        help="Path to rlm-base-dev (default: <workspace>/vendor/rlm-base-dev)",
+        required=True,
+        help="Path to local rlm-base-dev checkout",
     )
     args = parser.parse_args()
-
-    if args.repo_root is not None:
-        repo_root = args.repo_root.resolve()
-    else:
-        # scripts/ → skill → .cursor → workspace
-        workspace = Path(__file__).resolve().parents[3]
-        repo_root = workspace / "vendor" / "rlm-base-dev"
-
-    if not repo_root.is_dir():
-        print(f"rlm-base-dev not found: {repo_root}", file=sys.stderr)
+    root = args.repo_root.resolve()
+    if not root.is_dir():
+        print(f"Repo root not found: {root}", file=sys.stderr)
         return 1
 
-    post_qb = repo_root / "unpackaged" / "post_quantumbit"
-    if not post_qb.is_dir():
-        print(f"post_quantumbit missing under {repo_root}", file=sys.stderr)
-        return 1
-
-    removed, missing = strip_branding(repo_root)
-    print(f"Stripped QuantumBit branding under {repo_root}")
-    for p in removed:
-        print(f"  removed: {p}")
-    for p in missing:
-        print(f"  already absent: {p}")
-    if not removed and missing:
-        print("Nothing removed (paths already stripped or missing).", file=sys.stderr)
+    removed, missing = strip_branding(root)
+    print(f"Stripped QuantumBit branding under {root}")
+    for path in removed:
+        print(f"  removed: {path}")
+    for path in missing:
+        print(f"  note: {path}")
     return 0
 
 

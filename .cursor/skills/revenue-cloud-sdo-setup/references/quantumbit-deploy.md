@@ -64,8 +64,9 @@ fi
 
 ### 2. Strip QuantumBit org branding (required)
 
-Removes Lightning themes, branding sets, active-theme settings, and QuantumBit
-logo static resources so the SDO keeps its existing Lightning branding.
+Removes the active-theme settings and QuantumBit logo static resources so the
+SDO is not forced onto a QuantumBit default theme. **Keeps** theme
+`QuantumBitSLDSv2` (+ branding set) so Step 6 Phase 4b can replace the Brand Image.
 
 ```bash
 python3 .cursor/skills/revenue-cloud-sdo-setup/scripts/strip_quantumbit_branding.py \

@@ -89,27 +89,24 @@ Do not use a global/personal install of this skill.
    When Phase 4 asks for org, pre-select that username/alias — do not re-auth from scratch.
 4. **Phase 0** still asks for company name + website (interactive).
 
-### Phase 4b — Company brand image (locked overlay)
+### Branding (no skip overlay)
 
-Run Phase 4b **only if the org has not already been rebranded for the company**
-being productized in this run.
+Always run Phase 4b and any other branding steps **as written** in
+`.cursor/skills/rlm-generic-demo-products/SKILL.md` (org Themes and Branding
+brand-image replace on `QuantumBitSLDSv2`, etc.). Do **not** skip rebranding
+because the org already looks rebranded.
 
-**Skip Phase 4b** when either is true:
+SDO QuantumBit strip **preserves** theme `QuantumBitSLDSv2` (and its branding
+set) so Phase 4b can run; it only removes the active-theme settings and logo
+static resources so QuantumBit is not forced as the org default theme.
 
-- Active Lightning theme / branding set brand image is already the company logo
-  captured in Phase 1 for this company, or
-- Org name / documented prior run already matches this company and a brand asset
-  for it is present
+**Auth token:** `sf org display --json` redacts `accessToken`. Local helper
+scripts under `.cursor/skills/rlm-generic-demo-products/scripts/` must use
+`sf org auth show-access-token --json` (patched in this project). Re-apply that
+patch after an upstream skill sync if overwritten.
 
-**Run Phase 4b** when not rebranded:
-
-- Prefer theme `QuantumBitSLDSv2` when present
-- Otherwise update the org’s **current active** Lightning Experience theme /
-  branding set brand image
-- Do **not** re-deploy stripped QuantumBit themes solely to satisfy Phase 4b if
-  another active theme exists
-
-If no suitable theme/branding set exists, warn and continue product create.
+**One-Time selling model:** omit `ProrationPolicyId` on `ProductSellingModelOption`
+(org rejects proration for One-Time).
 
 Scripts under `.cursor/skills/rlm-generic-demo-products/scripts/` (e.g.
 `update-theme-brand-image.sh`, `upload-static-resource.sh`) must receive the
